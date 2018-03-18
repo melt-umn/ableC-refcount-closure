@@ -10,10 +10,10 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 
 import edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 
-marking terminal RefCountClosure_t 'refcount_closure' lexer classes {Ckeyword};
+marking terminal Closure_t 'closure' lexer classes {Ckeyword};
 
 concrete productions top::TypeSpecifier_c
-| 'refcount_closure' '<' te::RefCountClosureTypeExpr_c '>'
+| 'closure' '<' te::RefCountClosureTypeExpr_c '>'
     { top.realTypeSpecifiers = [te.ast];
       top.preTypeSpecifiers = [];
       te.givenQualifiers = top.givenQualifiers; }

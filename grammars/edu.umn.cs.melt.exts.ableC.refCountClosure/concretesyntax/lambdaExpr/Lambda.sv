@@ -10,20 +10,20 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 
 import edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 
-marking terminal RefCountLambda_t 'refcount_lambda' lexer classes {Ckeyword};
+marking terminal Lambda_t 'lambda' lexer classes {Ckeyword};
 
 concrete productions top::PostfixExpr_c
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::Expr_c ')'
+| 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::Expr_c ')'
     { top.ast = refCountLambdaExpr(captured.ast, foldParameterDecl(params.ast), res.ast, location=top.location); }
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::Expr_c ')'
+| 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::Expr_c ')'
     { top.ast = refCountLambdaExpr(captured.ast, nilParameters(), res.ast, location=top.location); }
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
+| 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
     { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, foldStmt(body.ast), location=top.location); }
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
+| 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
     { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, foldStmt(body.ast), location=top.location); }
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' '}'
+| 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' '}'
     { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, nullStmt(), location=top.location); }
-| 'refcount_lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' '}'
+| 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' '}'
     { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, nullStmt(), location=top.location); }
 
 nonterminal MaybeCaptureList_c with ast<MaybeCaptureList>;
