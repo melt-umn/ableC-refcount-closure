@@ -19,7 +19,7 @@ abstract production refCountLambdaExpr
 top::Expr ::= captured::MaybeCaptureList params::Parameters res::Expr
 {
   propagate substituted;
-  top.pp = pp"refcount:lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
+  top.pp = pp"refcount::lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++
@@ -47,7 +47,7 @@ abstract production refCountLambdaStmtExpr
 top::Expr ::= captured::MaybeCaptureList params::Parameters res::TypeName body::Stmt
 {
   propagate substituted;
-  top.pp = pp"refcount:lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
+  top.pp = pp"refcount::lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++ body.errors ++
@@ -103,28 +103,38 @@ top::Expr ::= size::Expr captured::MaybeCaptureList freeVariables::[Name]
     substExpr(
       [declRefSubstitution("__size__", size)],
       parseExpr(
-        s"refcount_refs_malloc(__size__, &_rt, ${toString(captured.refCountClosureCount)}, _refs)"));
+        s"refcount_refs_malloc(__size__, &_rt, ${toString(captured.numRefs)}, _refs)"));
 }
 
-global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");--fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name; 
+global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name;
 
-synthesized attribute refCountClosureCount::Integer occurs on MaybeCaptureList, CaptureList;
+synthesized attribute numRefs::Integer occurs on MaybeCaptureList, CaptureList;
 synthesized attribute refsInitTrans::InitList occurs on MaybeCaptureList, CaptureList;
 
 aspect production justCaptureList
 top::MaybeCaptureList ::= cl::CaptureList
 {
-  top.refCountClosureCount = cl.refCountClosureCount;
+  top.numRefs = cl.numRefs;
   top.refsInitTrans = cl.refsInitTrans;
 }
 
 aspect production consCaptureList
 top::CaptureList ::= h::Name t::CaptureList
 {
+  local isRefCountTag::Boolean =
+    case h.valueItem.typerep of
+      pointerType(
+        _,
+        tagType(nilQualifier(), refIdTagType(structSEU(), "refcount_tag_s", _))) -> true
+    | _ -> false
+    end;
   local isRefCountClosure::Boolean = isRefCountClosureType(h.valueItem.typerep);
-  top.refCountClosureCount = t.refCountClosureCount + toInt(isRefCountClosure);
+  top.numRefs = t.numRefs + toInt(isRefCountTag || isRefCountClosure);
   top.refsInitTrans =
-    if !isRefCountClosure then t.refsInitTrans else
+    if isRefCountTag
+    then consInit(init(exprInitializer(declRefExpr(h, location=builtin))), t.refsInitTrans)
+    else if isRefCountClosure
+    then
       consInit(
         init(
           exprInitializer(
@@ -133,13 +143,14 @@ top::CaptureList ::= h::Name t::CaptureList
               false,
               name("_rt", location=builtin),
               location=builtin))),
-        t.refsInitTrans);
+        t.refsInitTrans)
+    else t.refsInitTrans;
 }
 
 aspect production nilCaptureList
 top::CaptureList ::= 
 {
-  top.refCountClosureCount = 0;
+  top.numRefs = 0;
   top.refsInitTrans = nilInit();
 }
 

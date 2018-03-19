@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
-//#include <stdio.h>
+#include <stdio.h>
 
 #ifndef __REFCOUNT_H
 #define __REFCOUNT_H
@@ -11,7 +11,7 @@
  */
 typedef struct refcount_tag_s *refcount_tag;
 struct refcount_tag_s {
-  const char *fn_name;
+  //const char *fn_name;
   size_t ref_count;
   size_t refs_len;
   refcount_tag refs[];
@@ -24,6 +24,10 @@ struct refcount_tag_s {
  */
 static inline void add_ref(const refcount_tag rt) {
   //fprintf(stderr, "Adding ref to %s\n", rt->fn_name);
+  if (rt == NULL) {
+    fprintf(stderr, "Fatal error: Adding ref to invalid refcount tag\n");
+    exit(1);
+  }
   rt->ref_count++;
 }
 
@@ -35,6 +39,10 @@ static inline void add_ref(const refcount_tag rt) {
  */
 static void remove_ref(const refcount_tag rt) {
   //fprintf(stderr, "Removing ref to %s\n", rt->fn_name);
+  if (rt == NULL || rt->ref_count == 0) {
+    fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
+    exit(1);
+  }
   if (--rt->ref_count == 0) {
     for (size_t i = 0; i < rt->refs_len; i++) {
       remove_ref(rt->refs[i]);
