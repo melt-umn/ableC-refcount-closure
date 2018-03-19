@@ -4,7 +4,7 @@ abstract production refCountClosureTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Location
 {
   propagate substituted;
-  top.pp = pp"${terminate(space(), q.pps)}refcount_closure<(${
+  top.pp = pp"${terminate(space(), q.pps)}refcount:closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
   
   res.env = addEnv(params.defs, top.env);
@@ -44,7 +44,7 @@ top::Type ::= q::Qualifiers params::[Type] res::Type
 {
   propagate substituted;
   
-  top.lpp = pp"${terminate(space(), q.pps)}refcount_closure<(${
+  top.lpp = pp"${terminate(space(), q.pps)}refcount:closure<(${
     if null(params) then pp"void" else
       ppImplode(
         pp", ",

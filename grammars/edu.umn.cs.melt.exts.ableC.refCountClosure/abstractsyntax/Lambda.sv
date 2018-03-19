@@ -19,7 +19,7 @@ abstract production refCountLambdaExpr
 top::Expr ::= captured::MaybeCaptureList params::Parameters res::Expr
 {
   propagate substituted;
-  top.pp = pp"refcount_lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
+  top.pp = pp"refcount:lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++
@@ -47,7 +47,7 @@ abstract production refCountLambdaStmtExpr
 top::Expr ::= captured::MaybeCaptureList params::Parameters res::TypeName body::Stmt
 {
   propagate substituted;
-  top.pp = pp"refcount_lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
+  top.pp = pp"refcount:lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++ body.errors ++
@@ -103,7 +103,7 @@ top::Expr ::= size::Expr captured::MaybeCaptureList freeVariables::[Name]
     substExpr(
       [declRefSubstitution("__size__", size)],
       parseExpr(
-        s"refcount_malloc(__size__, &_rt, ${toString(captured.refCountClosureCount)}, _refs)"));
+        s"refcount_malloc_refs(__size__, &_rt, ${toString(captured.refCountClosureCount)}, _refs)"));
 }
 
 global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");--fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name; 
