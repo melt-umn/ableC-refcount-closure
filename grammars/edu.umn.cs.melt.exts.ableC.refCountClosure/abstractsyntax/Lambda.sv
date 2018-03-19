@@ -103,7 +103,7 @@ top::Expr ::= size::Expr captured::MaybeCaptureList freeVariables::[Name]
     substExpr(
       [declRefSubstitution("__size__", size)],
       parseExpr(
-        s"refcount_malloc_refs(__size__, &_rt, ${toString(captured.refCountClosureCount)}, _refs)"));
+        s"refcount_refs_malloc(__size__, &_rt, ${toString(captured.refCountClosureCount)}, _refs)"));
 }
 
 global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");--fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name; 

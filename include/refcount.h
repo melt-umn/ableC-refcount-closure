@@ -66,7 +66,9 @@ static inline void *refcount_refs_malloc(const size_t size,
   refcount_tag rt = mem;
   rt->ref_count = 1;
   rt->refs_len = refs_len;
-  memcpy(rt->refs, refs, refs_size);
+  if (refs_len) {
+    memcpy(rt->refs, refs, refs_size);
+  }
   *p_rt = rt;
 
   for (size_t i = 0; i < rt->refs_len; i++) {
@@ -84,7 +86,7 @@ static inline void *refcount_refs_malloc(const size_t size,
  * @return A pointer to the allocated memory.
  */
 static inline void *refcount_malloc(const size_t size, refcount_tag *const p_rt) {
-  return refcount_malloc_refs(size, p_rt, 0, ((refcount_tag[]){}));
+  return refcount_refs_malloc(size, p_rt, 0, NULL);
 }
 
 #endif
