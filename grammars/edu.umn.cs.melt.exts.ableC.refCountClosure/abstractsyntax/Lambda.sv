@@ -23,7 +23,7 @@ top::Expr ::= captured::MaybeCaptureList params::Parameters res::Expr
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++
-    checkIncludeErrors(top.location, top.env);
+    checkRefCountInclude(top.location, top.env);
   
   local paramNames::[Name] =
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.defs))));
@@ -51,7 +51,7 @@ top::Expr ::= captured::MaybeCaptureList params::Parameters res::TypeName body::
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++ body.errors ++
-    checkIncludeErrors(top.location, top.env);
+    checkRefCountInclude(top.location, top.env);
   
   local paramNames::[Name] =
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.defs))));
@@ -154,7 +154,7 @@ top::CaptureList ::=
   top.refsInitTrans = nilInit();
 }
 
-function checkIncludeErrors
+function checkRefCountInclude
 [Message] ::= loc::Location env::Decorated Env
 {
   return

@@ -22,7 +22,7 @@ struct __attribute__((refId("${structRefId}"),
 """);
   
   local localErrors::[Message] =
-    checkIncludeErrors(loc, top.env) ++
+    checkRefCountInclude(loc, top.env) ++
     params.errors ++ res.errors;
   local fwrd::BaseTypeExpr =
     injectGlobalDeclsTypeExpr(

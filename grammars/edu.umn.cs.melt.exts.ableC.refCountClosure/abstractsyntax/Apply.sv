@@ -12,7 +12,7 @@ top::Expr ::= fn::Expr args::Exprs
   propagate substituted;
   top.pp = parens(ppConcat([fn.pp, parens(ppImplode(cat(comma(), space()), args.pps))]));
   
-  local localErrors::[Message] = checkIncludeErrors(top.location, top.env);
+  local localErrors::[Message] = checkRefCountInclude(top.location, top.env);
   local fwrd::Expr =
     applyTransExpr(fn, args, refCountClosureTypeExpr(_, _, _, builtin), isRefCountClosureType, location=top.location);
   
