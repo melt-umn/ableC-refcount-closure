@@ -14,6 +14,7 @@ struct refcount_tag_s {
   //const char *fn_name;
   size_t ref_count;
   size_t refs_len;
+  void (*finalize)(void *);
   refcount_tag_t refs[];
 };
 
@@ -48,13 +49,16 @@ static void remove_ref(const refcount_tag_t rt) {
       remove_ref(rt->refs[i]);
     }
     //fprintf(stderr, "Freed %s\n", rt->fn_name);
+    if (rt->finalize != NULL) {
+      rt->finalize((void*)rt + sizeof(struct refcount_tag_s));
+    }
     free(rt);
   }
 }
 
 /**
  * Allocate reference-counted memory with an array of outgoing references to be
- * made by the data.
+ * made by the data and a finalization function to be called when freed.
  *
  * @param size The number of bytes to allocate.
  * @param p_rt A pointer to a refcount tag to initialize.
@@ -64,16 +68,18 @@ static void remove_ref(const refcount_tag_t rt) {
  * allocated memory.
  * @return A pointer to the allocated memory.
  */
-static inline void *refcount_refs_malloc(const size_t size,
+static inline void *refcount_final_malloc(const size_t size,
                                          refcount_tag_t *const p_rt,
                                          const size_t refs_len,
-                                         const refcount_tag_t refs[const]) {
+                                         const refcount_tag_t refs[const],
+                                         void (*finalize)(void *)) {
   size_t refs_size = sizeof(refcount_tag_t) * refs_len;
   size_t rt_size = sizeof(struct refcount_tag_s) + refs_size;
   void *mem = malloc(rt_size + size);
   refcount_tag_t rt = mem;
   rt->ref_count = 1;
   rt->refs_len = refs_len;
+  rt->finalize = finalize;
   if (refs_len) {
     memcpy(rt->refs, refs, refs_size);
   }
@@ -87,7 +93,26 @@ static inline void *refcount_refs_malloc(const size_t size,
 }
 
 /**
- * Allocate reference-counted memory with no outgoing references.
+ * Allocate reference-counted memory with an array of outgoing references to be
+ * made by the data, and no finalization.
+ *
+ * @param size The number of bytes to allocate.
+ * @param p_rt A pointer to a refcount tag to initialize.
+ * @param refs_len The number of outgoing references to be made from the
+ * allocated memory.
+ * @param refs A pointer to an array of outgoing references to be made from the
+ * allocated memory.
+ * @return A pointer to the allocated memory.
+ */
+static inline void *refcount_refs_malloc(const size_t size,
+                                         refcount_tag_t *const p_rt,
+                                         const size_t refs_len,
+                                         const refcount_tag_t refs[const]) {
+  return refcount_final_malloc(size, p_rt, refs_len, refs, NULL);
+}
+
+/**
+ * Allocate reference-counted memory with no outgoing references or finalization.
  *
  * @param size The number of bytes to allocate.
  * @param p_rt A pointer to a refcount tag to initialize.
