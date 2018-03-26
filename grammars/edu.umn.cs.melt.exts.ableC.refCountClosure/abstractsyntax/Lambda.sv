@@ -86,9 +86,9 @@ top::Stmt ::= captured::MaybeCaptureList freeVariables::[Name]
     substStmt(
       [initializerSubstitution("__refs_init__", objectInitializer(captured.refsInitTrans))],
       parseStmt(s"""
-proto_typedef refcount_tag;
-refcount_tag _rt;
-refcount_tag _refs[] = __refs_init__;
+proto_typedef refcount_tag_t;
+refcount_tag_t _rt;
+refcount_tag_t _refs[] = __refs_init__;
 """));
 }
 

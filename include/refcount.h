@@ -9,12 +9,12 @@
  * Tag structure placed at beginning of allocated memory that contains reference-
  * counting information for a pointer.
  */
-typedef struct refcount_tag_s *refcount_tag;
+typedef struct refcount_tag_s *refcount_tag_t;
 struct refcount_tag_s {
   //const char *fn_name;
   size_t ref_count;
   size_t refs_len;
-  refcount_tag refs[];
+  refcount_tag_t refs[];
 };
 
 /**
@@ -22,7 +22,7 @@ struct refcount_tag_s {
  *
  * @param rt The tag for which to add a reference.
  */
-static inline void add_ref(const refcount_tag rt) {
+static inline void add_ref(const refcount_tag_t rt) {
   //fprintf(stderr, "Adding ref to %s\n", rt->fn_name);
   if (rt == NULL) {
     fprintf(stderr, "Fatal error: Adding ref to invalid refcount tag\n");
@@ -37,7 +37,7 @@ static inline void add_ref(const refcount_tag rt) {
  *
  * @param rt The tag for which to remove a reference.
  */
-static void remove_ref(const refcount_tag rt) {
+static void remove_ref(const refcount_tag_t rt) {
   //fprintf(stderr, "Removing ref to %s\n", rt->fn_name);
   if (rt == NULL || rt->ref_count == 0) {
     fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
@@ -65,13 +65,13 @@ static void remove_ref(const refcount_tag rt) {
  * @return A pointer to the allocated memory.
  */
 static inline void *refcount_refs_malloc(const size_t size,
-                                         refcount_tag *const p_rt,
+                                         refcount_tag_t *const p_rt,
                                          const size_t refs_len,
-                                         const refcount_tag refs[const]) {
-  size_t refs_size = sizeof(refcount_tag) * refs_len;
+                                         const refcount_tag_t refs[const]) {
+  size_t refs_size = sizeof(refcount_tag_t) * refs_len;
   size_t rt_size = sizeof(struct refcount_tag_s) + refs_size;
   void *mem = malloc(rt_size + size);
-  refcount_tag rt = mem;
+  refcount_tag_t rt = mem;
   rt->ref_count = 1;
   rt->refs_len = refs_len;
   if (refs_len) {
@@ -93,7 +93,7 @@ static inline void *refcount_refs_malloc(const size_t size,
  * @param p_rt A pointer to a refcount tag to initialize.
  * @return A pointer to the allocated memory.
  */
-static inline void *refcount_malloc(const size_t size, refcount_tag *const p_rt) {
+static inline void *refcount_malloc(const size_t size, refcount_tag_t *const p_rt) {
   return refcount_refs_malloc(size, p_rt, 0, NULL);
 }
 

@@ -17,7 +17,7 @@ struct __attribute__((refId("${structRefId}"),
   const char *_fn_name; // For debugging
   void *_env; // Pointer to generated struct containing env
   __res_type__ (*_fn)(void *env, __params__); // First param is above env struct pointer
-  refcount_tag _rt; // Reference counting for env
+  refcount_tag_t _rt; // Reference counting for env
 };
 """);
   
