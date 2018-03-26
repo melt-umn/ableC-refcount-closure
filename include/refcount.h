@@ -12,9 +12,9 @@
 typedef struct refcount_tag_s *refcount_tag_t;
 struct refcount_tag_s {
   //const char *fn_name;
+  void (*finalize)(void *);
   size_t ref_count;
   size_t refs_len;
-  void (*finalize)(void *);
   refcount_tag_t refs[];
 };
 

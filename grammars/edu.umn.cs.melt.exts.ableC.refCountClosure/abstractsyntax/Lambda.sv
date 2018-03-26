@@ -16,10 +16,10 @@ exports edu:umn:cs:melt:exts:ableC:closure:abstractsyntax;
 global builtin::Location = builtinLoc("refCountClosure");
 
 abstract production refCountLambdaExpr
-top::Expr ::= captured::MaybeCaptureList params::Parameters res::Expr
+top::Expr ::= captured::CaptureList params::Parameters res::Expr
 {
   propagate substituted;
-  top.pp = pp"refcount::lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
+  top.pp = pp"refcount::lambda [${captured.pp}](${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++
@@ -44,10 +44,10 @@ top::Expr ::= captured::MaybeCaptureList params::Parameters res::Expr
 }
 
 abstract production refCountLambdaStmtExpr
-top::Expr ::= captured::MaybeCaptureList params::Parameters res::TypeName body::Stmt
+top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
 {
   propagate substituted;
-  top.pp = pp"refcount::lambda ${captured.pp}(${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
+  top.pp = pp"refcount::lambda [${captured.pp}](${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++ body.errors ++
@@ -75,10 +75,10 @@ top::Expr ::= captured::MaybeCaptureList params::Parameters res::TypeName body::
 }
 
 abstract production refCountExtraInit1
-top::Stmt ::= captured::MaybeCaptureList freeVariables::[Name]
+top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
   propagate substituted;
-  top.pp = pp"refCountExtraInit1 ${captured.pp};";
+  top.pp = pp"refCountExtraInit1 [${captured.pp}];";
   top.functionDefs := [];
   captured.freeVariablesIn = freeVariables;
   
@@ -93,10 +93,10 @@ refcount_tag_t _refs[] = __refs_init__;
 }
 
 abstract production refCountMalloc
-top::Expr ::= size::Expr captured::MaybeCaptureList freeVariables::[Name]
+top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
 {
   propagate substituted;
-  top.pp = pp"refCountMalloc ${captured.pp}(${size.pp})";
+  top.pp = pp"refCountMalloc [${captured.pp}](${size.pp})";
   captured.freeVariablesIn = freeVariables;
   
   forwards to
@@ -108,15 +108,8 @@ top::Expr ::= size::Expr captured::MaybeCaptureList freeVariables::[Name]
 
 global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name;
 
-synthesized attribute numRefs::Integer occurs on MaybeCaptureList, CaptureList;
-synthesized attribute refsInitTrans::InitList occurs on MaybeCaptureList, CaptureList;
-
-aspect production justCaptureList
-top::MaybeCaptureList ::= cl::CaptureList
-{
-  top.numRefs = cl.numRefs;
-  top.refsInitTrans = cl.refsInitTrans;
-}
+synthesized attribute numRefs::Integer occurs on CaptureList;
+synthesized attribute refsInitTrans::InitList occurs on CaptureList;
 
 aspect production consCaptureList
 top::CaptureList ::= h::Name t::CaptureList
