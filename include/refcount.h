@@ -50,7 +50,7 @@ static void remove_ref(const refcount_tag_t rt) {
     }
     //fprintf(stderr, "Freed %s\n", rt->fn_name);
     if (rt->finalize != NULL) {
-      rt->finalize((void*)rt + sizeof(struct refcount_tag_s));
+      rt->finalize((void*)rt + sizeof(struct refcount_tag_s) + sizeof(refcount_tag_t) * rt->refs_len);
     }
     free(rt);
   }
