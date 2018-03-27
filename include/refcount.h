@@ -11,6 +11,7 @@
  */
 typedef struct refcount_tag_s *refcount_tag_t;
 struct refcount_tag_s {
+  void *data;
   //const char *fn_name;
   void (*finalize)(void *);
   size_t ref_count;
@@ -38,7 +39,7 @@ static inline void add_ref(const refcount_tag_t rt) {
  *
  * @param rt The tag for which to remove a reference.
  */
-static void remove_ref(const refcount_tag_t rt) {
+static inline void remove_ref(const refcount_tag_t rt) {
   //fprintf(stderr, "Removing ref to %s\n", rt->fn_name);
   if (rt == NULL || rt->ref_count == 0) {
     fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
@@ -50,7 +51,7 @@ static void remove_ref(const refcount_tag_t rt) {
     }
     //fprintf(stderr, "Freed %s\n", rt->fn_name);
     if (rt->finalize != NULL) {
-      rt->finalize((void*)rt + sizeof(struct refcount_tag_s) + sizeof(refcount_tag_t) * rt->refs_len);
+      rt->finalize(rt->data);
     }
     free(rt);
   }
@@ -76,7 +77,9 @@ static inline void *refcount_final_malloc(const size_t size,
   size_t refs_size = sizeof(refcount_tag_t) * refs_len;
   size_t rt_size = sizeof(struct refcount_tag_s) + refs_size;
   void *mem = malloc(rt_size + size);
+  void *data = mem + rt_size;
   refcount_tag_t rt = mem;
+  rt->data = data;
   rt->ref_count = 1;
   rt->refs_len = refs_len;
   rt->finalize = finalize;
@@ -89,7 +92,7 @@ static inline void *refcount_final_malloc(const size_t size,
     add_ref(rt->refs[i]);
   }
   
-  return mem + rt_size;
+  return data;
 }
 
 /**
