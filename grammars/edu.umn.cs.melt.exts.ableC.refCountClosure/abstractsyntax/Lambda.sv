@@ -106,7 +106,7 @@ top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
         s"refcount_refs_malloc(__size__, &_rt, ${toString(captured.numRefs)}, _refs)"));
 }
 
-global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->fn_name = _result._fn_name;
+global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->name = _result._fn_name;
 
 synthesized attribute numRefs::Integer occurs on CaptureList;
 synthesized attribute refsInitTrans::InitList occurs on CaptureList;

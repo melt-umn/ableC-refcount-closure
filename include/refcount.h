@@ -12,7 +12,7 @@
 typedef struct refcount_tag_s *refcount_tag_t;
 struct refcount_tag_s {
   void *data;
-  //const char *fn_name;
+  //const char *name;
   void (*finalize)(void *);
   size_t ref_count;
   size_t refs_len;
@@ -25,7 +25,7 @@ struct refcount_tag_s {
  * @param rt The tag for which to add a reference.
  */
 static inline void add_ref(const refcount_tag_t rt) {
-  //fprintf(stderr, "Adding ref to %s\n", rt->fn_name);
+  //fprintf(stderr, "Adding ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL) {
     fprintf(stderr, "Fatal error: Adding ref to invalid refcount tag\n");
     exit(1);
@@ -40,7 +40,7 @@ static inline void add_ref(const refcount_tag_t rt) {
  * @param rt The tag for which to remove a reference.
  */
 static inline void remove_ref(const refcount_tag_t rt) {
-  //fprintf(stderr, "Removing ref to %s\n", rt->fn_name);
+  //fprintf(stderr, "Removing ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL || rt->ref_count == 0) {
     fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
     exit(1);
@@ -49,7 +49,7 @@ static inline void remove_ref(const refcount_tag_t rt) {
     for (size_t i = 0; i < rt->refs_len; i++) {
       remove_ref(rt->refs[i]);
     }
-    //fprintf(stderr, "Freed %s\n", rt->fn_name);
+    //fprintf(stderr, "Freed %s\n", rt->name);
     if (rt->finalize != NULL) {
       rt->finalize(rt->data);
     }
@@ -70,10 +70,10 @@ static inline void remove_ref(const refcount_tag_t rt) {
  * @return A pointer to the allocated memory.
  */
 static inline void *refcount_final_malloc(const size_t size,
-                                         refcount_tag_t *const p_rt,
-                                         const size_t refs_len,
-                                         const refcount_tag_t refs[const],
-                                         void (*finalize)(void *)) {
+                                          refcount_tag_t *const p_rt,
+                                          const size_t refs_len,
+                                          const refcount_tag_t refs[const],
+                                          void (*finalize)(void *)) {
   size_t refs_size = sizeof(refcount_tag_t) * refs_len;
   size_t rt_size = sizeof(struct refcount_tag_s) + refs_size;
   void *mem = malloc(rt_size + size);
