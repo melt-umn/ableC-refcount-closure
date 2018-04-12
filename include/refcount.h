@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 
 #ifndef __REFCOUNT_H
 #define __REFCOUNT_H
@@ -14,6 +15,7 @@ struct refcount_tag_s {
   void *data;
   //const char *name;
   void (*finalize)(void *);
+  pthread_mutex_t mutex;
   size_t ref_count;
   size_t refs_len;
   refcount_tag_t refs[];
@@ -25,12 +27,14 @@ struct refcount_tag_s {
  * @param rt The tag for which to add a reference.
  */
 static inline void add_ref(const refcount_tag_t rt) {
+  pthread_mutex_lock(&rt->mutex);
   //fprintf(stderr, "Adding ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL) {
     fprintf(stderr, "Fatal error: Adding ref to invalid refcount tag\n");
     abort();
   }
   rt->ref_count++;
+  pthread_mutex_unlock(&rt->mutex);
 }
 
 /**
@@ -40,6 +44,7 @@ static inline void add_ref(const refcount_tag_t rt) {
  * @param rt The tag for which to remove a reference.
  */
 static inline void remove_ref(const refcount_tag_t rt) {
+  pthread_mutex_lock(&rt->mutex);
   //fprintf(stderr, "Removing ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL || rt->ref_count == 0) {
     fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
@@ -53,7 +58,11 @@ static inline void remove_ref(const refcount_tag_t rt) {
     if (rt->finalize != NULL) {
       rt->finalize(rt->data);
     }
+    pthread_mutex_unlock(&rt->mutex);
+    pthread_mutex_destroy(&rt->mutex);
     free(rt);
+  } else {
+    pthread_mutex_unlock(&rt->mutex);
   }
 }
 
@@ -83,6 +92,7 @@ static inline void *refcount_final_malloc(const size_t size,
   rt->ref_count = 1;
   rt->refs_len = refs_len;
   rt->finalize = finalize;
+  pthread_mutex_init(&rt->mutex, NULL);
   if (refs_len) {
     memcpy(rt->refs, refs, refs_size);
   }
