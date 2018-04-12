@@ -28,7 +28,7 @@ static inline void add_ref(const refcount_tag_t rt) {
   //fprintf(stderr, "Adding ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL) {
     fprintf(stderr, "Fatal error: Adding ref to invalid refcount tag\n");
-    exit(1);
+    abort();
   }
   rt->ref_count++;
 }
@@ -43,7 +43,7 @@ static inline void remove_ref(const refcount_tag_t rt) {
   //fprintf(stderr, "Removing ref to %s (has %lu ref(s))\n", rt->name, rt->ref_count);
   if (rt == NULL || rt->ref_count == 0) {
     fprintf(stderr, "Fatal error: Removing ref to invalid refcount tag\n");
-    exit(1);
+    abort();
   }
   if (--rt->ref_count == 0) {
     for (size_t i = 0; i < rt->refs_len; i++) {
