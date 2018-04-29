@@ -131,8 +131,47 @@ static inline void *refcount_refs_malloc(const size_t size,
  * @param p_rt A pointer to a refcount tag to initialize.
  * @return A pointer to the allocated memory.
  */
-static inline void *refcount_malloc(const size_t size, refcount_tag_t *const p_rt) {
+static inline void *refcount_malloc(const size_t size,
+                                    refcount_tag_t *const p_rt) {
   return refcount_refs_malloc(size, p_rt, 0, NULL);
+}
+
+/**
+ * Create a refcount tag wrapping multiple other tags into a single reference.
+ * This effectively makes the new tag "responsible" for a given number of
+ * references to each wrapped tag; Note that this does not add references to the
+ * existing tags.
+ *
+ * @param ref_count The number of refrences for which this tag is responsible.
+ * @param refs_len The number of references to be wrapped.
+ * @param refs A pointer to an array of references to be wrapped.
+ * @return A refcount tag wrapping the provided references.
+ */
+static inline refcount_tag_t refcount_wrap(const size_t ref_count,
+                                           const size_t refs_len,
+                                           const refcount_tag_t refs[const]) {
+  size_t refs_size = sizeof(refcount_tag_t) * refs_len;
+  size_t rt_size = sizeof(struct refcount_tag_s) + refs_size;
+  refcount_tag_t rt = malloc(rt_size);
+  rt->data = NULL;
+  rt->ref_count = ref_count;
+  rt->refs_len = refs_len;
+  rt->finalize = NULL;
+  pthread_mutex_init(&rt->mutex, NULL);
+  if (refs_len) {
+    memcpy(rt->refs, refs, refs_size);
+  }
+
+#ifndef NDEBUG
+  for (size_t i = 0; i < rt->refs_len; i++) {
+    if (refs[i]->ref_count < ref_count) {
+      fprintf(stderr, "Fatal error: Wrapped reference has fewer refs than expected\n");
+      abort();
+    }
+  }
+#endif
+  
+  return rt;
 }
 
 #endif
