@@ -84,13 +84,11 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
   captured.freeVariablesIn = freeVariables;
   
   forwards to
-    substStmt(
-      [initializerSubstitution("__refs_init__", objectInitializer(captured.refsInitTrans))],
-      parseStmt(s"""
-proto_typedef refcount_tag_t;
-refcount_tag_t _rt;
-refcount_tag_t _refs[] = __refs_init__;
-"""));
+    ableC_Stmt {
+      proto_typedef refcount_tag_t;
+      refcount_tag_t _rt;
+      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)};
+    };
 }
 
 abstract production refCountMalloc
@@ -101,10 +99,9 @@ top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
   captured.freeVariablesIn = freeVariables;
   
   forwards to
-    substExpr(
-      [declRefSubstitution("__size__", size)],
-      parseExpr(
-        s"refcount_refs_malloc(__size__, &_rt, ${toString(captured.numRefs)}, _refs)"));
+    ableC_Expr {
+      refcount_refs_malloc($Expr{size}, &_rt, $intLiteralExpr{captured.numRefs}, _refs)
+    };
 }
 
 global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->name = _result._fn_name;
