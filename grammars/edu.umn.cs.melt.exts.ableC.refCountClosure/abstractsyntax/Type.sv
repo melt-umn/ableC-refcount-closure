@@ -53,8 +53,19 @@ top::Type ::= q::Qualifiers params::[Type] res::Type
           map((.rpp), params)))}) -> ${res.lpp}${res.rpp}>";
   top.rpp = notext();
   
+  top.withoutTypeQualifiers = refCountClosureType(nilQualifier(), params, res);
+  top.withoutExtensionQualifiers = refCountClosureType(filterExtensionQualifiers(q), params, res);
   top.withTypeQualifiers =
     refCountClosureType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), params, res);
+  top.mergeQualifiers = \t2::Type ->
+    case t2 of
+      refCountClosureType(q2, params2, res2) ->
+        refCountClosureType(
+          unionQualifiers(top.qualifiers, q2.qualifiers),
+          zipWith(\ t1::Type t2::Type -> t1.mergeQualifiers(t2), params, params2),
+          res.mergeQualifiers(res2))
+    | _ -> forward.mergeQualifiers(t2)
+    end;
   
   local structName::String = refCountClosureStructName(params, res);
   local structRefId::String = s"edu:umn:cs:melt:exts:ableC:refCountClosure:${structName}";
