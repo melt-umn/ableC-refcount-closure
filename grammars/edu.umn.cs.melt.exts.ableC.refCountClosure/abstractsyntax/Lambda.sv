@@ -37,7 +37,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
     lambdaTransExpr(
       refCountMalloc(_, captured, captured.freeVariablesIn, location=_),
       captured, params, res, 
-      refCountClosureTypeExpr(_, _, _, builtin),
+      refCountClosureType, refCountClosureStructDecl, refCountClosureStructName,
       refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2,
       location=top.location);
   
@@ -68,7 +68,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
     lambdaStmtTransExpr(
       refCountMalloc(_, captured, captured.freeVariablesIn, location=_),
       captured, params, res, body,
-      refCountClosureTypeExpr(_, _, _, builtin),
+      refCountClosureType, refCountClosureStructDecl, refCountClosureStructName,
       refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2,
       location=top.location);
   
@@ -104,7 +104,7 @@ top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
     };
 }
 
-global refCountExtraInit2::Stmt = parseStmt("_result._rt = _rt;");-- fprintf(stderr, \"Allocated %s\\n\", _result._fn_name); _rt->name = _result._fn_name;
+global refCountExtraInit2::Stmt = ableC_Stmt { _result.rt = _rt; };-- fprintf(stderr, "Allocated %s\n", _result.fn_name); _rt->name = _result.fn_name;
 
 synthesized attribute numRefs::Integer occurs on CaptureList;
 synthesized attribute refsInitTrans::InitList occurs on CaptureList;
@@ -120,6 +120,9 @@ top::CaptureList ::= h::Name t::CaptureList
     | _ -> false
     end;
   local isRefCountClosure::Boolean = isRefCountClosureType(h.valueItem.typerep);
+  local paramTypes::[Type] = refCountClosureParamTypes(h.valueItem.typerep);
+  local resultType::Type = refCountClosureResultType(h.valueItem.typerep);
+  local structName::String = refCountClosureStructName(paramTypes, resultType);
   top.numRefs = t.numRefs + toInt(isRefCountTag || isRefCountClosure);
   top.refsInitTrans =
     if isRefCountTag
@@ -129,11 +132,9 @@ top::CaptureList ::= h::Name t::CaptureList
       consInit(
         positionalInit(
           exprInitializer(
-            memberExpr(
-              declRefExpr(h, location=builtin),
-              false,
-              name("_rt", location=builtin),
-              location=builtin))),
+            ableC_Expr {
+              ((struct $name{structName})$Name{h}).rt
+            })),
         t.refsInitTrans)
     else t.refsInitTrans;
 }
