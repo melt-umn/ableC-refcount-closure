@@ -126,15 +126,14 @@ top::CaptureList ::= h::Name t::CaptureList
   top.numRefs = t.numRefs + toInt(isRefCountTag || isRefCountClosure);
   top.refsInitTrans =
     if isRefCountTag
-    then consInit(positionalInit(exprInitializer(declRefExpr(h, location=builtin))), t.refsInitTrans)
+    then
+      consInit(
+        positionalInit(exprInitializer(declRefExpr(h, location=builtin))),
+        t.refsInitTrans)
     else if isRefCountClosure
     then
       consInit(
-        positionalInit(
-          exprInitializer(
-            ableC_Expr {
-              ((struct $name{structName})$Name{h}).rt
-            })),
+        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt })),
         t.refsInitTrans)
     else t.refsInitTrans;
 }
