@@ -116,7 +116,7 @@ top::CaptureList ::= h::Name t::CaptureList
     case h.valueItem.typerep of
       pointerType(
         _,
-        tagType(nilQualifier(), refIdTagType(structSEU(), "refcount_tag_s", _))) -> true
+        extType(nilQualifier(), refIdExtType(structSEU(), "refcount_tag_s", _))) -> true
     | _ -> false
     end;
   local isRefCountClosure::Boolean = isRefCountClosureType(h.valueItem.typerep);
