@@ -9,6 +9,7 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
   top.pp = pp"${terminate(space(), q.pps)}refcount::closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
   
+  params.position = 0;
   res.env = addEnv(params.defs, top.env);
   
   local structName::String = refCountClosureStructName(params.typereps, res.typerep);
@@ -31,6 +32,8 @@ top::Decl ::= params::Parameters res::TypeName
   propagate substituted;
   top.pp = pp"refCountClosureStructDecl<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>;";
+  
+  params.position = 0;
   
   local structName::String = refCountClosureStructName(params.typereps, res.typerep);
   local structRefId::String = s"edu:umn:cs:melt:exts:ableC:refCountClosure:${structName}";

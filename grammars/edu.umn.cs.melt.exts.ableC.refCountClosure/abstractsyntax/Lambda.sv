@@ -30,6 +30,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, res.freeVariables));
   
   params.env = openScopeEnv(top.env);
+  params.position = 0;
   res.env = addEnv(params.defs, params.env);
   res.returnType = just(res.typerep);
   
@@ -58,9 +59,10 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.defs))));
   captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, body.freeVariables));
   
+  params.env = openScopeEnv(addEnv(res.defs, res.env));
+  params.position = 0;
   res.env = top.env;
   res.returnType = nothing();
-  params.env = openScopeEnv(addEnv(res.defs, res.env));
   body.env = addEnv(params.defs, params.env);
   body.returnType = just(res.typerep);
   
