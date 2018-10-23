@@ -26,12 +26,12 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
     checkRefCountInclude(top.location, top.env);
   
   local paramNames::[Name] =
-    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.defs))));
+    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, res.freeVariables));
   
   params.env = openScopeEnv(top.env);
   params.position = 0;
-  res.env = addEnv(params.defs, params.env);
+  res.env = addEnv(params.defs ++ params.functionDefs, params.env);
   res.returnType = just(res.typerep);
   
   local fwrd::Expr =
@@ -56,14 +56,14 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
     checkRefCountInclude(top.location, top.env);
   
   local paramNames::[Name] =
-    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.defs))));
+    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, body.freeVariables));
   
   params.env = openScopeEnv(addEnv(res.defs, res.env));
   params.position = 0;
   res.env = top.env;
   res.returnType = nothing();
-  body.env = addEnv(params.defs, params.env);
+  body.env = addEnv(params.defs ++ params.functionDefs, params.env);
   body.returnType = just(res.typerep);
   
   local fwrd::Expr =
