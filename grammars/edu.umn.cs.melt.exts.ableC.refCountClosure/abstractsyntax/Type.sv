@@ -1,5 +1,7 @@
 grammar edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 
+import edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
+
 abstract production refCountClosureTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Location
 {
@@ -7,6 +9,7 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
   top.pp = pp"${terminate(space(), q.pps)}refcount::closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
   
+  params.position = 0;
   res.env = addEnv(params.defs, top.env);
   
   local structName::String = refCountClosureStructName(params.typereps, res.typerep);
@@ -17,80 +20,111 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
     params.errors ++ res.errors;
   local fwrd::BaseTypeExpr =
     injectGlobalDeclsTypeExpr(
-      consDecl(
-        maybeRefIdDecl(
-          structRefId,
-          ableC_Decl {
-            struct __attribute__((refId($stringLiteralExpr{structRefId}),
-                                  module("edu:umn:cs:melt:exts:ableC:refCountClosure:closure"))) $name{structName} {
-              const char *_fn_name; // For debugging
-              void *_env; // Pointer to generated struct containing env
-              $BaseTypeExpr{typeModifierTypeExpr(res.bty, res.mty)} (*_fn)(void *env, $Parameters{params}); // First param is above env struct pointer
-              refcount_tag_t _rt; // Reference counting for env
-            };
-          }),
-        nilDecl()),
-      directTypeExpr(refCountClosureType(q, params.typereps, res.typerep)));
+      consDecl(refCountClosureStructDecl(params, res), nilDecl()),
+      extTypeExpr(q, refCountClosureType(params.typereps, res.typerep)));
   
   forwards to if !null(localErrors) then errorTypeExpr(localErrors) else fwrd;
 }
 
+abstract production refCountClosureStructDecl
+top::Decl ::= params::Parameters res::TypeName
+{
+  propagate substituted;
+  top.pp = pp"refCountClosureStructDecl<(${
+    if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>;";
+  
+  params.position = 0;
+  
+  local structName::String = refCountClosureStructName(params.typereps, res.typerep);
+  local structRefId::String = s"edu:umn:cs:melt:exts:ableC:refCountClosure:${structName}";
+  
+  forwards to
+    maybeRefIdDecl(
+      structRefId,
+      ableC_Decl {
+        struct __attribute__((refId($stringLiteralExpr{structRefId}))) $name{structName} {
+          const char *fn_name; // For debugging
+          void *env; // Pointer to generated struct containing env
+          // Implementation function pointer
+          // First param is above env struct pointer
+          // Remaining params are params of the closure
+          $BaseTypeExpr{typeModifierTypeExpr(res.bty, res.mty)} (*fn)(void *env, $Parameters{params});
+          refcount_tag_t rt; // Reference counting for env
+        };
+      });
+}
+
 abstract production refCountClosureType
-top::Type ::= q::Qualifiers params::[Type] res::Type
+top::ExtType ::= params::[Type] res::Type
 {
   propagate substituted;
   
-  top.lpp = pp"${terminate(space(), q.pps)}refcount::closure<(${
+  top.pp = pp"refcount::closure<(${
     if null(params) then pp"void" else
       ppImplode(
         pp", ",
         zipWith(cat,
           map((.lpp), params),
           map((.rpp), params)))}) -> ${res.lpp}${res.rpp}>";
-  top.rpp = notext();
-  
-  top.withoutTypeQualifiers = refCountClosureType(nilQualifier(), params, res);
-  top.withoutExtensionQualifiers = refCountClosureType(filterExtensionQualifiers(q), params, res);
-  top.withTypeQualifiers =
-    refCountClosureType(foldQualifier(top.addedTypeQualifiers ++ q.qualifiers), params, res);
-  top.mergeQualifiers = \t2::Type ->
-    case t2 of
-      refCountClosureType(q2, params2, res2) ->
-        refCountClosureType(
-          unionQualifiers(top.qualifiers, q2.qualifiers),
-          zipWith(\ t1::Type t2::Type -> t1.mergeQualifiers(t2), params, params2),
-          res.mergeQualifiers(res2))
-    | _ -> forward.mergeQualifiers(t2)
-    end;
   
   local structName::String = refCountClosureStructName(params, res);
   local structRefId::String = s"edu:umn:cs:melt:exts:ableC:refCountClosure:${structName}";
-  
   local isErrorType::Boolean =
-    foldr(
-      \ a::Boolean b::Boolean -> a || b, false,
-      map(\ t::Type -> case t of errorType() -> true | _ -> false end, res :: params));
+    any(map(\ t::Type -> case t of errorType() -> true | _ -> false end, res :: params));
   
-  forwards to
+  top.host =
     if isErrorType
     then errorType()
-    else tagType(q, refIdTagType(structSEU(), structName, structRefId));
+    else extType(top.givenQualifiers, refIdExtType(structSEU(), structName, structRefId));
+  top.mangledName = s"_refcount_closure_${implode("_", map((.mangledName), params))}_${res.mangledName}";
+  top.isEqualTo =
+    \ other::ExtType ->
+      case other of
+        refCountClosureType(otherParams, otherRes) ->
+          length(params) == length(otherParams) &&
+          all(zipWith(compatibleTypes(_, _, false, false), res :: params, otherRes :: otherParams))
+      | _ -> false
+      end;
+  
+  top.callProd = just(refCountApplyExpr(_, _, location=_));
+  top.callMemberProd = just(callMemberRefCountClosure(_, _, _, _, location=_));
 }
 
 function refCountClosureStructName
 String ::= params::[Type] res::Type
 {
-  return s"_refcount_closure_${implode("_", map((.mangledName), params))}_${res.mangledName}_s";
+  return refCountClosureType(params, res).mangledName ++ "_s";
 }
 
--- Check if a type is a refrence-counting closure in a non-interfering way
+-- Check if a type is a refcount closure
 function isRefCountClosureType
 Boolean ::= t::Type
 {
   return
     case t of
-      tagType(_, refIdTagType(_, _, refId)) ->
-        startsWith("edu:umn:cs:melt:exts:ableC:refCountClosure:", refId)
+      extType(_, refCountClosureType(_, _)) -> true
     | _ -> false
+    end;
+}
+
+-- Find the parameter types of a refcount closure type
+function refCountClosureParamTypes
+[Type] ::= t::Type
+{
+  return
+    case t of
+      extType(_, refCountClosureType(paramTypes, _)) -> paramTypes
+    | _ -> []
+    end;
+}
+
+-- Find the result type of a refcount closure type
+function refCountClosureResultType
+Type ::= t::Type
+{
+  return
+    case t of
+      extType(_, refCountClosureType(_, resType)) -> resType
+    | _ -> errorType()
     end;
 }
