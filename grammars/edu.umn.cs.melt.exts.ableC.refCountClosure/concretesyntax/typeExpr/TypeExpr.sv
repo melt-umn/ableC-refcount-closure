@@ -22,10 +22,10 @@ nonterminal RefCountClosureTypeExpr_c with location, ast<BaseTypeExpr>, givenQua
 
 concrete productions top::RefCountClosureTypeExpr_c
 | '(' param::RefCountClosureTypeExpr_c ')' '->' ret::TypeName_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl([], param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), ret.ast, top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), ret.ast, top.location);
       param.givenQualifiers = nilQualifier(); }
 | '(' param::RefCountClosureTypeExpr_c ')' '->' rest::RefCountClosureTypeExpr_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl([], param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), typeName(rest.ast, baseTypeExpr()), top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), typeName(rest.ast, baseTypeExpr()), top.location);
       param.givenQualifiers = nilQualifier();
       rest.givenQualifiers = nilQualifier(); }
 | '(' params::ClosureParameterList_c ')' '->' rest::RefCountClosureTypeExpr_c
