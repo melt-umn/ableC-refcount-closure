@@ -42,6 +42,7 @@ top::Decl ::= params::Parameters res::TypeName
     maybeRefIdDecl(
       structRefId,
       ableC_Decl {
+        proto_typedef refcount_tag_t;
         struct __attribute__((refId($stringLiteralExpr{structRefId}))) $name{structName} {
           const char *fn_name; // For debugging
           void *env; // Pointer to generated struct containing env
