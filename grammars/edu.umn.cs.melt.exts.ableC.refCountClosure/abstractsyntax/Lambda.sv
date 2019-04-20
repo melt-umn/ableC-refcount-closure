@@ -6,7 +6,6 @@ imports silver:langutil:pp;
 imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction:parsing;
-imports edu:umn:cs:melt:ableC:abstractsyntax:substitution;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable as ovrld;
 --imports edu:umn:cs:melt:ableC:abstractsyntax:debug;
@@ -18,7 +17,6 @@ global builtin::Location = builtinLoc("refCountClosure");
 abstract production refCountLambdaExpr
 top::Expr ::= captured::CaptureList params::Parameters res::Expr
 {
-  propagate substituted;
   top.pp = pp"refcount::lambda [${captured.pp}](${ppImplode(text(", "), params.pps)}) -> (${res.pp})";
   
   local localErrors::[Message] =
@@ -48,7 +46,6 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
 abstract production refCountLambdaStmtExpr
 top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
 {
-  propagate substituted;
   top.pp = pp"refcount::lambda [${captured.pp}](${ppImplode(text(", "), params.pps)}) -> (${res.pp}) ${braces(nestlines(2, body.pp))}";
   
   local localErrors::[Message] =
@@ -80,7 +77,6 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
 abstract production refCountExtraInit1
 top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
-  propagate substituted;
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
   top.functionDefs := [];
   captured.freeVariablesIn = freeVariables;
@@ -96,7 +92,6 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
 abstract production refCountMalloc
 top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
 {
-  propagate substituted;
   top.pp = pp"refCountMalloc [${captured.pp}](${size.pp})";
   captured.freeVariablesIn = freeVariables;
   

@@ -5,7 +5,6 @@ import edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
 abstract production refCountClosureTypeExpr
 top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Location
 {
-  propagate substituted;
   top.pp = pp"${terminate(space(), q.pps)}refcount::closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
   
@@ -29,7 +28,6 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
 abstract production refCountClosureStructDecl
 top::Decl ::= params::Parameters res::TypeName
 {
-  propagate substituted;
   top.pp = pp"refCountClosureStructDecl<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>;";
   
@@ -58,7 +56,7 @@ top::Decl ::= params::Parameters res::TypeName
 abstract production refCountClosureType
 top::ExtType ::= params::[Type] res::Type
 {
-  propagate substituted, canonicalType;
+  propagate canonicalType;
   
   top.pp = pp"refcount::closure<(${
     if null(params) then pp"void" else
