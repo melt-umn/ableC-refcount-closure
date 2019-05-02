@@ -3,7 +3,6 @@ grammar edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 abstract production callMemberRefCountClosure
 top::Expr ::= lhs::Expr deref::Boolean rhs::Name a::Exprs
 {
-  propagate substituted;
   top.pp = parens(ppConcat([lhs.pp, text(if deref then "->" else "."), rhs.pp]));
   
   local paramTypes::[Type] = refCountClosureParamTypes(lhs.typerep);
