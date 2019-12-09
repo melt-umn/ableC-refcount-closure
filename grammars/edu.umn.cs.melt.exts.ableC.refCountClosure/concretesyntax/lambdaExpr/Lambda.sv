@@ -10,7 +10,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 
 import edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 
-marking terminal Lambda_t 'lambda' lexer classes {Ckeyword};
+marking terminal Lambda_t 'lambda' lexer classes {Keyword, ScopedReserved};
 
 concrete productions top::PostfixExpr_c
 | 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::Expr_c ')'

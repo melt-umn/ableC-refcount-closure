@@ -10,7 +10,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 
 import edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 
-marking terminal Closure_t 'closure' lexer classes {Ckeyword};
+marking terminal Closure_t 'closure' lexer classes {Keyword, ScopedReserved};
 
 concrete productions top::TypeSpecifier_c
 | 'closure' '<' te::RefCountClosureTypeExpr_c '>'
