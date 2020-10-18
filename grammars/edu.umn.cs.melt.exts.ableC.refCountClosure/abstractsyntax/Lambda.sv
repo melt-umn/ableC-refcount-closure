@@ -84,7 +84,7 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
     ableC_Stmt {
       proto_typedef refcount_tag_t;
       refcount_tag_t _rt;
-      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)};
+      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans, location=builtin)};
     };
 }
 
@@ -124,12 +124,12 @@ top::CaptureList ::= h::Name t::CaptureList
     if isRefCountTag
     then
       consInit(
-        positionalInit(exprInitializer(declRefExpr(h, location=builtin))),
+        positionalInit(exprInitializer(declRefExpr(h, location=builtin), location=builtin)),
         t.refsInitTrans)
     else if isRefCountClosure
     then
       consInit(
-        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt })),
+        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt }, location=builtin)),
         t.refsInitTrans)
     else t.refsInitTrans;
 }
