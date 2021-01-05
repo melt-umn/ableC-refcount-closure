@@ -119,7 +119,7 @@ top::CaptureList ::= h::Name t::CaptureList
   local paramTypes::[Type] = refCountClosureParamTypes(h.valueItem.typerep);
   local resultType::Type = refCountClosureResultType(h.valueItem.typerep);
   local structName::String = refCountClosureStructName(paramTypes, resultType);
-  top.numRefs = t.numRefs + toInt(isRefCountTag || isRefCountClosure);
+  top.numRefs = t.numRefs + toInteger(isRefCountTag || isRefCountClosure);
   top.refsInitTrans =
     if isRefCountTag
     then
