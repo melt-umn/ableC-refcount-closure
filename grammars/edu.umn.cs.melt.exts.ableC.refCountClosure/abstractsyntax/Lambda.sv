@@ -29,7 +29,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   params.env = openScopeEnv(top.env);
   params.position = 0;
   res.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  res.returnType = just(res.typerep);
+  res.controlStmtContext = controlStmtContext(just(res.typerep), false, false);
   
   local fwrd::Expr =
     lambdaTransExpr(
@@ -58,9 +58,9 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
   params.env = openScopeEnv(addEnv(res.defs, res.env));
   params.position = 0;
   res.env = top.env;
-  res.returnType = nothing();
+  res.controlStmtContext = initialControlStmtContext;
   body.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  body.returnType = just(res.typerep);
+  body.controlStmtContext = controlStmtContext(just(res.typerep), false, false);
   
   local fwrd::Expr =
     lambdaStmtTransExpr(
