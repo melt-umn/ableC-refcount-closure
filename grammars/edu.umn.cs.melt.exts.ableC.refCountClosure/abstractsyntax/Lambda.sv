@@ -7,6 +7,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable as ovrld;
+imports silver:util:treemap as tm;
 --imports edu:umn:cs:melt:ableC:abstractsyntax:debug;
 
 exports edu:umn:cs:melt:exts:ableC:closure:abstractsyntax;
@@ -29,7 +30,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   params.env = openScopeEnv(top.env);
   params.position = 0;
   res.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  res.controlStmtContext = controlStmtContext(just(res.typerep), false, false);
+  res.controlStmtContext = controlStmtContext(just(res.typerep), false, false, tm:empty());
   
   local fwrd::Expr =
     lambdaTransExpr(
@@ -60,7 +61,7 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
   res.env = top.env;
   res.controlStmtContext = initialControlStmtContext;
   body.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  body.controlStmtContext = controlStmtContext(just(res.typerep), false, false);
+  body.controlStmtContext = controlStmtContext(just(res.typerep), false, false, tm:add(body.labelDefs, tm:empty()));
   
   local fwrd::Expr =
     lambdaStmtTransExpr(
@@ -78,6 +79,7 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
   top.functionDefs := [];
+  top.labelDefs := [];
   captured.freeVariablesIn = freeVariables;
   
   forwards to
