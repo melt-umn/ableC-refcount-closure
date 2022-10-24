@@ -7,6 +7,7 @@ imports edu:umn:cs:melt:ableC:abstractsyntax:host;
 imports edu:umn:cs:melt:ableC:abstractsyntax:construction;
 imports edu:umn:cs:melt:ableC:abstractsyntax:env;
 imports edu:umn:cs:melt:ableC:abstractsyntax:overloadable as ovrld;
+imports silver:util:treemap as tm;
 --imports edu:umn:cs:melt:ableC:abstractsyntax:debug;
 
 exports edu:umn:cs:melt:exts:ableC:closure:abstractsyntax;
@@ -24,12 +25,12 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   
   local paramNames::[Name] =
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
-  captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, res.freeVariables));
+  captured.freeVariablesIn = removeAll(paramNames, nub(res.freeVariables));
   
   params.env = openScopeEnv(top.env);
   params.position = 0;
   res.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  res.returnType = just(res.typerep);
+  res.controlStmtContext = controlStmtContext(just(res.typerep), false, false, tm:empty());
   
   local fwrd::Expr =
     lambdaTransExpr(
@@ -53,14 +54,14 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
   
   local paramNames::[Name] =
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
-  captured.freeVariablesIn = removeAllBy(nameEq, paramNames, nubBy(nameEq, body.freeVariables));
+  captured.freeVariablesIn = removeAll(paramNames, nub(body.freeVariables));
   
   params.env = openScopeEnv(addEnv(res.defs, res.env));
   params.position = 0;
   res.env = top.env;
-  res.returnType = nothing();
+  res.controlStmtContext = initialControlStmtContext;
   body.env = addEnv(params.defs ++ params.functionDefs, params.env);
-  body.returnType = just(res.typerep);
+  body.controlStmtContext = controlStmtContext(just(res.typerep), false, false, tm:add(body.labelDefs, tm:empty()));
   
   local fwrd::Expr =
     lambdaStmtTransExpr(
@@ -78,13 +79,14 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
   top.functionDefs := [];
+  top.labelDefs := [];
   captured.freeVariablesIn = freeVariables;
   
   forwards to
     ableC_Stmt {
       proto_typedef refcount_tag_t;
       refcount_tag_t _rt;
-      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)};
+      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans, location=builtin)};
     };
 }
 
@@ -112,24 +114,24 @@ top::CaptureList ::= h::Name t::CaptureList
     case h.valueItem.typerep of
       pointerType(
         _,
-        extType(nilQualifier(), refIdExtType(structSEU(), "refcount_tag_s", _))) -> true
+        extType(nilQualifier(), refIdExtType(structSEU(), just("refcount_tag_s"), _))) -> true
     | _ -> false
     end;
   local isRefCountClosure::Boolean = isRefCountClosureType(h.valueItem.typerep);
   local paramTypes::[Type] = refCountClosureParamTypes(h.valueItem.typerep);
   local resultType::Type = refCountClosureResultType(h.valueItem.typerep);
   local structName::String = refCountClosureStructName(paramTypes, resultType);
-  top.numRefs = t.numRefs + toInt(isRefCountTag || isRefCountClosure);
+  top.numRefs = t.numRefs + toInteger(isRefCountTag || isRefCountClosure);
   top.refsInitTrans =
     if isRefCountTag
     then
       consInit(
-        positionalInit(exprInitializer(declRefExpr(h, location=builtin))),
+        positionalInit(exprInitializer(declRefExpr(h, location=builtin), location=builtin)),
         t.refsInitTrans)
     else if isRefCountClosure
     then
       consInit(
-        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt })),
+        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt }, location=builtin)),
         t.refsInitTrans)
     else t.refsInitTrans;
 }
