@@ -27,7 +27,9 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAll(paramNames, nub(res.freeVariables));
   
+  captured.env = top.env;
   params.env = openScopeEnv(top.env);
+  params.controlStmtContext = top.controlStmtContext;
   params.position = 0;
   res.env = addEnv(params.defs ++ params.functionDefs, params.env);
   res.controlStmtContext = controlStmtContext(just(res.typerep), false, false, tm:empty());
@@ -56,7 +58,9 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
     map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAll(paramNames, nub(body.freeVariables));
   
+  captured.env = top.env;
   params.env = openScopeEnv(addEnv(res.defs, res.env));
+  params.controlStmtContext = top.controlStmtContext;
   params.position = 0;
   res.env = top.env;
   res.controlStmtContext = initialControlStmtContext;
@@ -80,6 +84,7 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
   top.functionDefs := [];
   top.labelDefs := [];
+  propagate env;
   captured.freeVariablesIn = freeVariables;
   
   forwards to
@@ -94,6 +99,7 @@ abstract production refCountMalloc
 top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountMalloc [${captured.pp}](${size.pp})";
+  propagate env;
   captured.freeVariablesIn = freeVariables;
   
   forwards to

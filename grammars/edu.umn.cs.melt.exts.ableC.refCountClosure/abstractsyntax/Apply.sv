@@ -4,6 +4,7 @@ abstract production refCountApplyExpr
 top::Expr ::= fn::Expr args::Exprs
 {
   top.pp = parens(ppConcat([fn.pp, parens(ppImplode(cat(comma(), space()), args.pps))]));
+  propagate env, controlStmtContext;
   
   local localErrors :: [Message] =
     (if isRefCountClosureType(fn.typerep)
