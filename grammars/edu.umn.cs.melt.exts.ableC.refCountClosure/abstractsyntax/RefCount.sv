@@ -20,12 +20,11 @@ top::Expr ::= lhs::Expr deref::Boolean rhs::Name a::Exprs
       case rhs.name, a of
         "add_ref", nilExpr() -> ableC_Expr { add_ref(((struct $name{structName})$Expr{lhs}).rt) }
       | "add_ref", _ ->
-          errorExpr([err(rhs.location, "Reference-counting closure reference addition expected no parameters")], location=builtin)
+          errorExpr([errFromOrigin(rhs, "Reference-counting closure reference addition expected no parameters")])
       | "remove_ref", nilExpr() -> ableC_Expr { remove_ref(((struct $name{structName})$Expr{lhs}).rt) }
       | "remove_ref", _ ->
-          errorExpr([err(rhs.location, "Reference-counting closure reference removal expected no parameters")], location=builtin)
+          errorExpr([errFromOrigin(rhs, "Reference-counting closure reference removal expected no parameters")])
       | n, _ ->
-          errorExpr([err(rhs.location, s"Reference-counting closure does not have field ${n}")], location=builtin)
-      end,
-      location=builtin);
+          errorExpr([errFromOrigin(rhs, s"Reference-counting closure does not have field ${n}")])
+      end);
 }

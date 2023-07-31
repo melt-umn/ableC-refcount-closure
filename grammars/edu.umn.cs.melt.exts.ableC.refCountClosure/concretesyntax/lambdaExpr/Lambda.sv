@@ -14,19 +14,19 @@ marking terminal Lambda_t 'lambda' lexer classes {Keyword, Global};
 
 concrete productions top::PostfixExpr_c
 | 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::Expr_c ')'
-    { top.ast = refCountLambdaExpr(captured.ast, foldParameterDecl(params.ast), res.ast, location=top.location); }
+    { top.ast = refCountLambdaExpr(captured.ast, foldParameterDecl(params.ast), res.ast); }
 | 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::Expr_c ')'
-    { top.ast = refCountLambdaExpr(captured.ast, nilParameters(), res.ast, location=top.location); }
+    { top.ast = refCountLambdaExpr(captured.ast, nilParameters(), res.ast); }
 | 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
-    { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, foldStmt(body.ast), location=top.location); }
+    { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, foldStmt(body.ast)); }
 | 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' body::BlockItemList_c '}'
-    { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, foldStmt(body.ast), location=top.location); }
+    { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, foldStmt(body.ast)); }
 | 'lambda' captured::MaybeCaptureList_c '(' params::ParameterList_c ')' '->' '(' res::TypeName_c ')' '{' '}'
-    { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, nullStmt(), location=top.location); }
+    { top.ast = refCountLambdaStmtExpr(captured.ast, foldParameterDecl(params.ast), res.ast, nullStmt()); }
 | 'lambda' captured::MaybeCaptureList_c '(' ')' '->' '(' res::TypeName_c ')' '{' '}'
-    { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, nullStmt(), location=top.location); }
+    { top.ast = refCountLambdaStmtExpr(captured.ast, nilParameters(), res.ast, nullStmt()); }
 
-nonterminal MaybeCaptureList_c with ast<CaptureList>;
+tracked nonterminal MaybeCaptureList_c with ast<CaptureList>;
 
 concrete productions top::MaybeCaptureList_c
 | '[' cl::CaptureList_c ']'
@@ -34,7 +34,7 @@ concrete productions top::MaybeCaptureList_c
 | 
     { top.ast = freeVariablesCaptureList(); }
 
-nonterminal CaptureList_c with ast<CaptureList>;
+tracked nonterminal CaptureList_c with ast<CaptureList>;
 
 concrete productions top::CaptureList_c
 | id::Identifier_c ',' rest::CaptureList_c
