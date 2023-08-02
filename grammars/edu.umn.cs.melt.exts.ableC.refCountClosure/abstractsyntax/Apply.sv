@@ -4,6 +4,7 @@ abstract production refCountApplyExpr
 top::Expr ::= fn::Expr args::Exprs
 {
   top.pp = parens(ppConcat([fn.pp, parens(ppImplode(cat(comma(), space()), args.pps))]));
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate env, controlStmtContext;
   
   local localErrors :: [Message] =

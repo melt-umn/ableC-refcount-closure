@@ -78,6 +78,7 @@ abstract production refCountExtraInit1
 top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
+  attachNote extensionGenerated("ableC-refcount-closure");
   top.functionDefs := [];
   top.labelDefs := [];
   propagate env;
@@ -95,6 +96,7 @@ abstract production refCountMalloc
 top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountMalloc [${captured.pp}](${size.pp})";
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate env;
   captured.freeVariablesIn = freeVariables;
   
@@ -112,6 +114,7 @@ synthesized attribute refsInitTrans::InitList occurs on CaptureList;
 aspect production consCaptureList
 top::CaptureList ::= h::Name t::CaptureList
 {
+  attachNote extensionGenerated("ableC-refcount-closure");
   local isRefCountTag::Boolean =
     case h.valueItem.typerep of
       pointerType(

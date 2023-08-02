@@ -4,6 +4,7 @@ abstract production callMemberRefCountClosure
 top::Expr ::= lhs::Expr deref::Boolean rhs::Name a::Exprs
 {
   top.pp = parens(ppConcat([lhs.pp, text(if deref then "->" else "."), rhs.pp]));
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate env, controlStmtContext;
   
   local paramTypes::[Type] = refCountClosureParamTypes(lhs.typerep);
