@@ -88,7 +88,10 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
     ableC_Stmt {
       proto_typedef refcount_tag_t;
       refcount_tag_t _rt;
-      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)};
+      $Stmt{
+        if captured.numRefs > 0
+        then ableC_Stmt { refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)}; }
+        else nullStmt()}
     };
 }
 
@@ -101,8 +104,12 @@ top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
   captured.freeVariablesIn = freeVariables;
   
   forwards to
-    ableC_Expr {
+    if captured.numRefs > 0
+    then ableC_Expr {
       refcount_refs_malloc($Expr{size}, &_rt, $intLiteralExpr{captured.numRefs}, _refs)
+    }
+    else ableC_Expr {
+      refcount_malloc($Expr{size}, &_rt)
     };
 }
 
