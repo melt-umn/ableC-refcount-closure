@@ -7,8 +7,10 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
 {
   top.pp = pp"${terminate(space(), q.pps)}refcount::closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
+  propagate controlStmtContext;
   
   params.position = 0;
+  params.env = top.env;
   res.env = addEnv(params.defs, top.env);
   
   local structName::String = refCountClosureStructName(params.typereps, res.typerep);
@@ -30,6 +32,7 @@ top::Decl ::= params::Parameters res::TypeName
 {
   top.pp = pp"refCountClosureStructDecl<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>;";
+  propagate env, controlStmtContext;
   
   params.position = 0;
   
