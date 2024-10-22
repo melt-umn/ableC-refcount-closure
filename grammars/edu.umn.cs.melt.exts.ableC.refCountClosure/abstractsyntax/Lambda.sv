@@ -12,8 +12,6 @@ imports silver:util:treemap as tm;
 
 exports edu:umn:cs:melt:exts:ableC:closure:abstractsyntax;
 
-global builtin::Location = builtinLoc("refCountClosure");
-
 abstract production refCountLambdaExpr
 top::Expr ::= captured::CaptureList params::Parameters res::Expr
 {
@@ -21,10 +19,10 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++
-    checkRefCountInclude(top.location, top.env);
+    checkRefCountInclude(top.env);
   
   local paramNames::[Name] =
-    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
+    map(name, map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAll(paramNames, nub(res.freeVariables));
   
   captured.env = top.env;
@@ -36,11 +34,10 @@ top::Expr ::= captured::CaptureList params::Parameters res::Expr
   
   local fwrd::Expr =
     lambdaTransExpr(
-      refCountMalloc(_, captured, captured.freeVariablesIn, location=_),
+      refCountMalloc(_, captured, captured.freeVariablesIn),
       captured, params, res, 
       refCountClosureType, refCountClosureStructDecl, refCountClosureStructName,
-      refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2,
-      location=top.location);
+      refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2);
   
   forwards to mkErrorCheck(localErrors, fwrd);
 }
@@ -52,10 +49,10 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
   
   local localErrors::[Message] =
     captured.errors ++ params.errors ++ res.errors ++ body.errors ++
-    checkRefCountInclude(top.location, top.env);
+    checkRefCountInclude(top.env);
   
   local paramNames::[Name] =
-    map(name(_, location=builtin), map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
+    map(name, map(fst, foldr(append, [], map((.valueContribs), params.functionDefs))));
   captured.freeVariablesIn = removeAll(paramNames, nub(body.freeVariables));
   
   captured.env = top.env;
@@ -69,11 +66,10 @@ top::Expr ::= captured::CaptureList params::Parameters res::TypeName body::Stmt
   
   local fwrd::Expr =
     lambdaStmtTransExpr(
-      refCountMalloc(_, captured, captured.freeVariablesIn, location=_),
+      refCountMalloc(_, captured, captured.freeVariablesIn),
       captured, params, res, body,
       refCountClosureType, refCountClosureStructDecl, refCountClosureStructName,
-      refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2,
-      location=top.location);
+      refCountExtraInit1(captured, captured.freeVariablesIn), refCountExtraInit2);
   
   forwards to mkErrorCheck(localErrors, fwrd);
 }
@@ -82,6 +78,7 @@ abstract production refCountExtraInit1
 top::Stmt ::= captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountExtraInit1 [${captured.pp}];";
+  attachNote extensionGenerated("ableC-refcount-closure");
   top.functionDefs := [];
   top.labelDefs := [];
   propagate env;
@@ -91,7 +88,10 @@ top::Stmt ::= captured::CaptureList freeVariables::[Name]
     ableC_Stmt {
       proto_typedef refcount_tag_t;
       refcount_tag_t _rt;
-      refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans, location=builtin)};
+      $Stmt{
+        if captured.numRefs > 0
+        then ableC_Stmt { refcount_tag_t _refs[] = $Initializer{objectInitializer(captured.refsInitTrans)}; }
+        else nullStmt()}
     };
 }
 
@@ -99,12 +99,17 @@ abstract production refCountMalloc
 top::Expr ::= size::Expr captured::CaptureList freeVariables::[Name]
 {
   top.pp = pp"refCountMalloc [${captured.pp}](${size.pp})";
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate env;
   captured.freeVariablesIn = freeVariables;
   
   forwards to
-    ableC_Expr {
+    if captured.numRefs > 0
+    then ableC_Expr {
       refcount_refs_malloc($Expr{size}, &_rt, $intLiteralExpr{captured.numRefs}, _refs)
+    }
+    else ableC_Expr {
+      refcount_malloc($Expr{size}, &_rt)
     };
 }
 
@@ -116,6 +121,7 @@ synthesized attribute refsInitTrans::InitList occurs on CaptureList;
 aspect production consCaptureList
 top::CaptureList ::= h::Name t::CaptureList
 {
+  attachNote extensionGenerated("ableC-refcount-closure");
   local isRefCountTag::Boolean =
     case h.valueItem.typerep of
       pointerType(
@@ -132,12 +138,12 @@ top::CaptureList ::= h::Name t::CaptureList
     if isRefCountTag
     then
       consInit(
-        positionalInit(exprInitializer(declRefExpr(h, location=builtin), location=builtin)),
+        positionalInit(exprInitializer(declRefExpr(h))),
         t.refsInitTrans)
     else if isRefCountClosure
     then
       consInit(
-        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt }, location=builtin)),
+        positionalInit(exprInitializer(ableC_Expr { ((struct $name{structName})$Name{h}).rt })),
         t.refsInitTrans)
     else t.refsInitTrans;
 }
@@ -150,9 +156,9 @@ top::CaptureList ::=
 }
 
 function checkRefCountInclude
-[Message] ::= loc::Location env::Decorated Env
+[Message] ::= env::Decorated Env
 {
   return
     if !null(lookupTag("refcount_tag_s", env)) then []
-    else [err(loc, "Reference-counting closures require <refcount.h> to be included.")];
+    else [errFromOrigin(ambientOrigin(), "Reference-counting closures require <refcount.h> to be included.")];
 }

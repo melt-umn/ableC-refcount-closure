@@ -18,29 +18,29 @@ concrete productions top::TypeSpecifier_c
       top.preTypeSpecifiers = [];
       te.givenQualifiers = top.givenQualifiers; }
 
-nonterminal RefCountClosureTypeExpr_c with location, ast<BaseTypeExpr>, givenQualifiers;
+tracked nonterminal RefCountClosureTypeExpr_c with ast<BaseTypeExpr>, givenQualifiers;
 
 concrete productions top::RefCountClosureTypeExpr_c
 | '(' param::RefCountClosureTypeExpr_c ')' '->' ret::TypeName_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), ret.ast, top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), ret.ast);
       param.givenQualifiers = nilQualifier(); }
 | '(' param::RefCountClosureTypeExpr_c ')' '->' rest::RefCountClosureTypeExpr_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), typeName(rest.ast, baseTypeExpr()), top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, consParameters(parameterDecl(nilStorageClass(), param.ast, baseTypeExpr(), nothingName(), nilAttribute()), nilParameters()), typeName(rest.ast, baseTypeExpr()));
       param.givenQualifiers = nilQualifier();
       rest.givenQualifiers = nilQualifier(); }
 | '(' params::ClosureParameterList_c ')' '->' rest::RefCountClosureTypeExpr_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, foldParameterDecl(params.ast), typeName(rest.ast, baseTypeExpr()), top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, foldParameterDecl(params.ast), typeName(rest.ast, baseTypeExpr()));
       rest.givenQualifiers = nilQualifier(); }
 | '(' params::ClosureParameterList_c ')' '->' ret::TypeName_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, foldParameterDecl(params.ast), ret.ast, top.location); }
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, foldParameterDecl(params.ast), ret.ast); }
 | '(' ')' '->' rest::RefCountClosureTypeExpr_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, nilParameters(), typeName(rest.ast, baseTypeExpr()), top.location);
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, nilParameters(), typeName(rest.ast, baseTypeExpr()));
       rest.givenQualifiers = nilQualifier(); }
 | '(' ')' '->' ret::TypeName_c
-    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, nilParameters(), ret.ast, top.location); }
+    { top.ast = refCountClosureTypeExpr(top.givenQualifiers, nilParameters(), ret.ast); }
 
 -- Duplicate of ParameterList_c so MDA doesn't complain
-closed nonterminal ClosureParameterList_c with location, declaredIdents, ast<[ParameterDecl]>;
+closed tracked nonterminal ClosureParameterList_c with declaredIdents, ast<[ParameterDecl]>;
 concrete productions top::ClosureParameterList_c
 | h::ParameterDeclaration_c 
     { top.declaredIdents = h.declaredIdents;

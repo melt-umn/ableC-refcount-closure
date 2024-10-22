@@ -3,10 +3,11 @@ grammar edu:umn:cs:melt:exts:ableC:refCountClosure:abstractsyntax;
 import edu:umn:cs:melt:ableC:abstractsyntax:overloadable;
 
 abstract production refCountClosureTypeExpr
-top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Location
+top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName
 {
   top.pp = pp"${terminate(space(), q.pps)}refcount::closure<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>";
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate controlStmtContext;
   
   params.position = 0;
@@ -17,7 +18,7 @@ top::BaseTypeExpr ::= q::Qualifiers params::Parameters res::TypeName loc::Locati
   local structRefId::String = s"edu:umn:cs:melt:exts:ableC:refCountClosure:${structName}";
   
   local localErrors::[Message] =
-    checkRefCountInclude(loc, top.env) ++
+    checkRefCountInclude(top.env) ++
     params.errors ++ res.errors;
   local fwrd::BaseTypeExpr =
     injectGlobalDeclsTypeExpr(
@@ -32,6 +33,7 @@ top::Decl ::= params::Parameters res::TypeName
 {
   top.pp = pp"refCountClosureStructDecl<(${
     if null(params.pps) then pp"void" else ppImplode(pp", ", params.pps)}) -> ${res.pp}>;";
+  attachNote extensionGenerated("ableC-refcount-closure");
   propagate env, controlStmtContext;
   
   params.position = 0;
@@ -88,8 +90,8 @@ top::ExtType ::= params::[Type] res::Type
       | _ -> false
       end;
   
-  top.callProd = just(refCountApplyExpr(_, _, location=_));
-  top.callMemberProd = just(callMemberRefCountClosure(_, _, _, _, location=_));
+  top.callProd = just(refCountApplyExpr);
+  top.callMemberProd = just(callMemberRefCountClosure);
 }
 
 function refCountClosureStructName
